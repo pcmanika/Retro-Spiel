@@ -39,12 +39,15 @@ class Pet:
     def __init__(self):
         self.x = 10
         self.y = 10
-    
+        self.direction = True
+
     def update(self, playerx, playery):
         if self.x - playerx > 10:
             self.x = self.x - 1
+            self.direction = False
         if playerx - self.x > 10:
             self.x = self.x + 1
+            self.direction = True
 
         if self.y - playery > 13:
             self.y = self.y - 1
@@ -53,7 +56,10 @@ class Pet:
         
     
     def draw(self):
-        pyxel.blt(self.x, self.y, 0, 0, 16, 16, 16,2)
+        if self.direction:
+            pyxel.blt(self.x, self.y, 0, 0, 16, 16, 16,2)
+        else:
+            pyxel.blt(self.x, self.y, 0, 0, 16, -16, 16,2)
 
 
 
