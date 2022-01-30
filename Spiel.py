@@ -63,22 +63,28 @@ class Shot:
         self.shoty = 0
         self.shotmove = False
     
-    def shoot(self, x, y):
+    def shoot(self, x, y, direction):
         self.shotmove = True
         self.shotx = x
         self.shoty = y
+        self.direction = direction
 
     def update(self):
         # Shot position
         if self.shotmove == True:
-            self.shotx = self.shotx + 4
+            if self.direction:
+                self.shotx = self.shotx + 4
+            else:
+                self.shotx = self.shotx - 4
         if self.shotx > 160:
             self.shotmove = False
   
     def draw(self):
         if self.shotmove == True:
-            pyxel.blt(self.shotx, self.shoty, 0, 16, 48, 16, 16, 2)
-
+            if self.direction:
+                pyxel.blt(self.shotx, self.shoty, 0, 16, 48, 16, 16, 2)
+            else:
+                pyxel.blt(self.shotx, self.shoty, 0, 16, 48, -16, 16, 2)
 
 
 
@@ -89,7 +95,7 @@ class App:
         self.posx = 0
         self.posy = 0
         self.posS = []
-        self.i = True
+        self.direction = True
         for i in range(0, 25):
             self.posS.append([randrange(0,160),randrange(0,120)])
         
@@ -108,10 +114,10 @@ class App:
             pyxel.quit()
         if pyxel.btn(pyxel.KEY_A):
             self.posx = self.posx - 2
-            self.i = False
+            self.direction = False
         if pyxel.btn(pyxel.KEY_D):
             self.posx = self.posx + 2
-            self.i = True
+            self.direction = True
         if pyxel.btn(pyxel.KEY_W):
             self.posy = self.posy - 2
         if pyxel.btn(pyxel.KEY_S):
@@ -136,11 +142,11 @@ class App:
         # Shot
         if pyxel.btnp(pyxel.KEY_SPACE):
             shot = Shot()
-            shot.shoot(self.posx, self.posy)
+            shot.shoot(self.posx, self.posy, self.direction)
             self.shots.append(shot)
         
         for i in self.shots:
-            i.update()
+           i.update()
                 
             
     def draw(self):
@@ -157,9 +163,12 @@ class App:
         
 
         #pyxel.text(self.posx, self.posy, 'Pixel', 8)
-        if self.i:
-            pyxel.blt(self.posx, self.posy, 0, 16, 0, 16, 16,2)
+        costume = 0
+        if -8 < self.posx - self.enemy.x < 8 and -8 < self.posy - self.enemy.y < 8:
+            costume = 16
+        if self.direction:
+            pyxel.blt(self.posx, self.posy, 1, 0, costume, 16, 16,2)
         else:
-            pyxel.blt(self.posx, self.posy, 0, 16, 0, -16, 16,2)
+            pyxel.blt(self.posx, self.posy, 1, 0, costume, -16, 16,2)
 App()
 
