@@ -11,24 +11,29 @@ class Enemy:
         self.x = 50
         self.y = 50
         self.img = img
+        self.direction = True
 
     def update(self, playerx, playery):
 
-        if self.y - playery > 13:
+        if self.y - playery > 0:
             self.y = self.y - 1
-        if playery - self.y > 13:
+        if playery - self.y > 0:
             self.y = self.y + 1 
 
-        if self.y == playery:    
+        if self.y == playery:
             if self.x - playerx > 10:
                 self.x = self.x - 1
+                self.direction = False
             if playerx - self.x > 10:
                 self.x = self.x + 1
-
+                self.direction = True
 
 
     def draw(self):
-       pyxel.blt(self.x, self.y, 0, self.img, 32, 16, 16, 2) 
+        if self.direction:
+            pyxel.blt(self.x, self.y, 0, self.img, 32, 16, 16, 2) 
+        else:
+            pyxel.blt(self.x, self.y, 0, self.img, 32, -16, 16, 2)
 
 class Pet:
     def __init__(self):
