@@ -5,6 +5,14 @@ from random import *
 # pyxel edit Spiel.pyxres
 # Img seite
 # self!!!!!!
+class live:
+    def __init__(self) -> None:
+        pass
+
+    def update(self):
+        pass
+    def draw(self):
+        pyxel.blt(20, 110, 1, 0, 32, 16, 16, 2)
 
 class Enemy:
     def __init__(self, img):
@@ -16,16 +24,16 @@ class Enemy:
     def update(self, playerx, playery):
 
         if self.y - playery > 0:
-            self.y = self.y - 1
+            self.y = self.y - 0.5
         if playery - self.y > 0:
-            self.y = self.y + 1 
+            self.y = self.y + 0.5
 
         if self.y == playery:
             if self.x - playerx > 10:
-                self.x = self.x - 1
+                self.x = self.x - 0.5
                 self.direction = False
             if playerx - self.x > 10:
-                self.x = self.x + 1
+                self.x = self.x + 0.5
                 self.direction = True
 
 
@@ -102,14 +110,15 @@ class App:
         self.posy = 0
         self.posS = []
         self.direction = True
+        #self.time_offset = pyxel.rndi(0,10)
+
         for i in range(0, 25):
             self.posS.append([randrange(0,160),randrange(0,120)])
         
         self.shots = []
         self.pet = Pet()
         self.enemy = Enemy(48)
-
-
+        
         pyxel.run(self.update, self.draw)
 
 
@@ -176,5 +185,8 @@ class App:
             pyxel.blt(self.posx, self.posy, 1, 0, costume, 16, 16,2)
         else:
             pyxel.blt(self.posx, self.posy, 1, 0, costume, -16, 16,2)
+        #for animation in (0,16,32,48):
+        #    pyxel.blt(self.posx, self.posy, 1, 0 + animation, costume, -16, 16,2)
+        #    self.time_offset = pyxel.rndi(0,10)
 App()
 
