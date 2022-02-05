@@ -110,6 +110,7 @@ class App:
         self.posy = 0
         self.posS = []
         self.direction = True
+        self.anim = 0
         #self.time_offset = pyxel.rndi(0,10)
 
         for i in range(0, 25):
@@ -181,12 +182,18 @@ class App:
         costume = 0
         if -8 < self.posx - self.enemy.x < 8 and -8 < self.posy - self.enemy.y < 8:
             costume = 16
+
+        player_frames = [0,16,32,48,64,80]
+
+        if  pyxel.frame_count % 2 == 0:
+            self.anim = self.anim + 1
+        if self.anim == 6:
+            self.anim = 0
+        
         if self.direction:
-            pyxel.blt(self.posx, self.posy, 1, 0, costume, 16, 16,2)
+            pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], costume, 16, 16,2)
         else:
-            pyxel.blt(self.posx, self.posy, 1, 0, costume, -16, 16,2)
-        #for animation in (0,16,32,48):
-        #    pyxel.blt(self.posx, self.posy, 1, 0 + animation, costume, -16, 16,2)
-        #    self.time_offset = pyxel.rndi(0,10)
+            pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], costume, -16, 16,2)
+ 
 App()
 
