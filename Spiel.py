@@ -5,6 +5,8 @@ from random import *
 # pyxel edit Spiel.pyxres
 # Img seite
 # self!!!!!!
+# git pull
+
 class live:
     def __init__(self) -> None:
         pass
@@ -16,8 +18,8 @@ class live:
 
 class Enemy:
     def __init__(self, img):
-        self.x = 50
-        self.y = 50
+        self.x = randint(0,150)
+        self.y = randint(0,110)
         self.img = img
         self.direction = True
 
@@ -36,12 +38,43 @@ class Enemy:
                 self.x = self.x + 0.5
                 self.direction = True
 
-
     def draw(self):
         if self.direction:
-            pyxel.blt(self.x, self.y, 0, self.img, 32, 16, 16, 2) 
+            pyxel.blt(self.x, self.y, 2, 0, self.img, 16, 16, 2) 
         else:
-            pyxel.blt(self.x, self.y, 0, self.img, 32, -16, 16, 2)
+            pyxel.blt(self.x, self.y, 2, 0, self.img,-16, 16, 2)
+    
+class Fireslime(Enemy):
+    def __init__(self):
+        super().__init__(16)
+        self.img = 16
+        self.speed = 1
+
+    
+    def update(self, playerx, playery):
+
+        if self.y - playery > 0:
+            self.y = self.y - self.speed
+        if playery - self.y > 0:
+            self.y = self.y + self.speed
+
+        if self.y == playery:
+            distance = self.x - playerx
+            if abs(distance) < 50:
+                if distance > 0:
+                    self.x = self.x + self.speed
+                else:
+                    self.x = self.x - self.speed
+            elif abs(distance) > 55:
+                if distance > 0:
+                    self.x = self.x - self.speed
+                else:
+                    self.x = self.x + self.speed
+        
+        if self.x < 0:
+            self.x = 0
+        if self.x > 145:
+            self.x = 145
 
 class Pet:
     def __init__(self):
@@ -111,14 +144,19 @@ class App:
         self.posS = []
         self.direction = True
         self.anim = 0
-        #self.time_offset = pyxel.rndi(0,10)
 
+        # Stones
         for i in range(0, 25):
             self.posS.append([randrange(0,160),randrange(0,120)])
         
+        # Shot
         self.shots = []
+
+        # Pet
         self.pet = Pet()
-        self.enemy = Enemy(48)
+
+        # Enemy
+        self.enemies = [Enemy(0), Fireslime(), Enemy(32), Enemy(48)]
         
         pyxel.run(self.update, self.draw)
 
@@ -150,7 +188,8 @@ class App:
             self.posy = -2
 
         # Enemy
-        self.enemy.update(self.posx, self.posy)
+        for enemy in self.enemies:
+            enemy.update(self.posx, self.posy)
 
         # Pet
         self.pet.update(self.posx, self.posy)
@@ -172,7 +211,8 @@ class App:
             pyxel.pset(pos[0], pos[1], 13)
 
         self.pet.draw()
-        self.enemy.draw()
+        for enemy in self.enemies:
+            enemy.draw()
 
         for i in self.shots:
             i.draw()
@@ -180,8 +220,8 @@ class App:
 
         #pyxel.text(self.posx, self.posy, 'Pixel', 8)
         costume = 0
-        if -8 < self.posx - self.enemy.x < 8 and -8 < self.posy - self.enemy.y < 8:
-            costume = 16
+        #if -8 < self.posx - self.enemies.x < 8 and -8 < self.posy - self.enemies.y < 8:
+        #    costume = 16
 
         player_frames = [0,16,32,48,64,80]
 
