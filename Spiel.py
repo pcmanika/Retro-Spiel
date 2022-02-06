@@ -22,21 +22,29 @@ class Enemy:
         self.y = randint(0,110)
         self.img = img
         self.direction = True
+        self.speed = 0.5
 
     def update(self, playerx, playery):
 
         if self.y - playery > 0:
-            self.y = self.y - 0.5
+            self.y = self.y - self.speed
         if playery - self.y > 0:
-            self.y = self.y + 0.5
+            self.y = self.y + self.speed
 
-        if self.y == playery:
+        if abs(self.y - playery) <= self.speed:
             if self.x - playerx > 10:
-                self.x = self.x - 0.5
-                self.direction = False
+                self.x = self.x - self.speed
             if playerx - self.x > 10:
-                self.x = self.x + 0.5
-                self.direction = True
+                self.x = self.x + self.speed
+        
+        self.face_player(playerx)
+
+    def face_player(self, playerx):
+        # Face player
+        if self.x < playerx:
+            self.direction = True
+        else:
+            self.direction = False
 
     def draw(self):
         if self.direction:
@@ -45,11 +53,12 @@ class Enemy:
             pyxel.blt(self.x, self.y, 2, 0, self.img,-16, 16, 2)
     
 class Fireslime(Enemy):
-    def __init__(self):
+    def __init__(self, add_shot):
         super().__init__(16)
         self.img = 16
         self.speed = 1
-
+        self.add_shot = add_shot
+        self.last_shot = 0
     
     def update(self, playerx, playery):
 
@@ -60,6 +69,14 @@ class Fireslime(Enemy):
 
         if self.y == playery:
             distance = self.x - playerx
+            
+            if self.last_shot + 50< pyxel.frame_count:
+                shot = Fireball()
+                shot.shoot(self.x, self.y, self.direction)
+                self.add_shot(shot)
+                self.last_shot = pyxel.frame_count
+
+
             if abs(distance) < 50:
                 if distance > 0:
                     self.x = self.x + self.speed
@@ -70,11 +87,26 @@ class Fireslime(Enemy):
                     self.x = self.x - self.speed
                 else:
                     self.x = self.x + self.speed
-        
+
+        self.face_player(playerx)
+
+
         if self.x < 0:
             self.x = 0
         if self.x > 145:
             self.x = 145
+
+class Waterslime(Enemy):
+    def __init__(self):
+        super().__init__(32)
+        self.img = 32
+        self.speed = 0.25
+
+class Bomber(Enemy):
+    def __init__(self):
+        super().__init__(48)
+        self.img = 48
+        self.speed = 1.5
 
 class Pet:
     def __init__(self):
@@ -109,6 +141,7 @@ class Shot:
         self.shotx = 0
         self.shoty = 0
         self.shotmove = False
+        self.image = 80
     
     def shoot(self, x, y, direction):
         self.shotmove = True
@@ -129,11 +162,15 @@ class Shot:
     def draw(self):
         if self.shotmove == True:
             if self.direction:
-                pyxel.blt(self.shotx, self.shoty, 0, 16, 48, 16, 16, 2)
+                pyxel.blt(self.shotx, self.shoty, 0, 0, self.image, 16, 16, 2)
             else:
-                pyxel.blt(self.shotx, self.shoty, 0, 16, 48, -16, 16, 2)
+                pyxel.blt(self.shotx, self.shoty, 0, 0, self.image, -16, 16, 2)
 
 
+class Fireball(Shot):
+    def __init__(self):
+        super().__init__()
+        self.image = 96
 
 class App:
     def __init__(self):
@@ -156,9 +193,14 @@ class App:
         self.pet = Pet()
 
         # Enemy
-        self.enemies = [Enemy(0), Fireslime(), Enemy(32), Enemy(48)]
+        self.enemies = [Enemy(0), Fireslime(self.add_shot), Waterslime(), Bomber()]
         
         pyxel.run(self.update, self.draw)
+        
+    # Shot
+    def add_shot(self, shot):
+        self.shots.append(shot)
+
 
 
     def update(self):
@@ -198,7 +240,7 @@ class App:
         if pyxel.btnp(pyxel.KEY_SPACE):
             shot = Shot()
             shot.shoot(self.posx, self.posy, self.direction)
-            self.shots.append(shot)
+            self.add_shot(shot)
         
         for i in self.shots:
            i.update()
