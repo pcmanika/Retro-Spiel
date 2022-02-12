@@ -1,10 +1,18 @@
+from re import X
+from tkinter import E
 import pyxel
 from random import * 
+from enum import Enum
 
 # frame_count % x zeit
 # pyxel edit Spiel.pyxres
 # self!!!!!!
 # git pull
+
+class EnemyState(Enum):
+    ALIVE = 0
+    DYING = 1
+    DEAD  = 2
 
 class Live:
     def __init__(self) -> None:
@@ -23,8 +31,16 @@ class Enemy:
         self.direction = True
         self.speed = 0.5
         self.anim = 0
+        self.state = EnemyState.ALIVE
+    
+    # Hitbox
+    def hitbox(self):
+        return [self.x, self.y, 16, 16]
 
     def update(self, playerx, playery):
+
+        if self.state == EnemyState.DEAD:
+            return
 
         if self.y - playery > 0:
             self.y = self.y - self.speed
@@ -48,6 +64,13 @@ class Enemy:
 
     def draw(self):
 
+        if self.state == EnemyState.DEAD:
+            return
+
+        # Hitbox
+        x, y, h, w = self.hitbox()
+        pyxel.rectb(x, y, h, w, 8)
+
         enemy_frames = [0,16,32,48,64,80,96,112,128,144,160,176,192,208,224,240]
 
         if  pyxel.frame_count % 2 == 0:
@@ -60,6 +83,16 @@ class Enemy:
         else:
             pyxel.blt(self.x, self.y, 2, enemy_frames[self.anim], self.img,-16, 16, 2)
     
+class Slime(Enemy):
+
+    def __init__(self):
+        super().__init__(32)
+        self.img = 0
+        self.speed = 1
+
+    def hitbox(self):
+        return [self.x + 2, self.y + 6, 11, 8]
+
 class Fireslime(Enemy):
     def __init__(self, add_shot):
         super().__init__(16)
@@ -67,6 +100,9 @@ class Fireslime(Enemy):
         self.speed = 0.5
         self.add_shot = add_shot
         self.last_shot = 0
+
+    def hitbox(self):
+        return [self.x + 3, self.y + 1, 10, 12]
     
     def update(self, playerx, playery):
 
@@ -110,12 +146,20 @@ class Waterslime(Enemy):
         self.img = 32
         self.speed = 0.25
 
+    # Hitbox
+    def hitbox(self):
+        return [self.x, self.y + 7, 16, 7]
+
 class Bomber(Enemy):
     def __init__(self):
         super().__init__(48)
         self.img = 48
         self.speed = 1.5
         self.anim = 0
+
+    # Hitbox
+    def hitbox(self):
+        return [self.x + 2, self.y + 2, 12, 12]
     
 
 class Pet:
@@ -146,38 +190,38 @@ class Pet:
 
 
 
-class Shot:
+class Arrow:
     def __init__(self):
-        self.shotx = 0
-        self.shoty = 0
+        self.x = 0
+        self.y = 0
         self.shotmove = False
         self.image = 80
     
     def shoot(self, x, y, direction):
         self.shotmove = True
-        self.shotx = x
-        self.shoty = y
+        self.x = x
+        self.y = y
         self.direction = direction
 
     def update(self):
         # Shot position
         if self.shotmove == True:
             if self.direction:
-                self.shotx = self.shotx + 4
+                self.x = self.x + 4
             else:
-                self.shotx = self.shotx - 4
-        if self.shotx > 160:
+                self.x = self.x - 4
+        if self.x > 160:
             self.shotmove = False
   
     def draw(self):
         if self.shotmove == True:
             if self.direction:
-                pyxel.blt(self.shotx, self.shoty, 0, 0, self.image, 16, 16, 2)
+                pyxel.blt(self.x, self.y, 0, 0, self.image, 16, 16, 2)
             else:
-                pyxel.blt(self.shotx, self.shoty, 0, 0, self.image, -16, 16, 2)
+                pyxel.blt(self.x, self.y, 0, 0, self.image, -16, 16, 2)
 
 
-class Fireball(Shot):
+class Fireball(Arrow):
     def __init__(self):
         super().__init__()
         self.image = 96
@@ -206,7 +250,7 @@ class App:
         self.pet = Pet()
 
         # Enemy
-        self.enemies = [Enemy(0), Fireslime(self.add_shot), Waterslime(), Bomber()]
+        self.enemies = [Slime(), Fireslime(self.add_shot), Waterslime(), Bomber()]
         
         pyxel.run(self.update, self.draw)
         
@@ -230,7 +274,7 @@ class App:
         if pyxel.btn(pyxel.KEY_W):
             self.posy = self.posy - 2
         if pyxel.btn(pyxel.KEY_S):
-            self.posy = self.posy + 2     
+            self.posy = self.posy + 2   
 
         # Player position
         if self.posx <= -2:
@@ -251,14 +295,22 @@ class App:
 
         # Shot
         if pyxel.btnp(pyxel.KEY_SPACE):
-            shot = Shot()
+            shot = Arrow()
             shot.shoot(self.posx, self.posy, self.direction)
             self.add_shot(shot)
         
-        for i in self.shots:
-           i.update()
-                
-    # Shot     
+        for shot in self.shots:
+            shot.update()
+
+            #if shot is not Arrow:
+            #    continue
+
+            for enemy in self.enemies:
+                x, y, w, h = enemy.hitbox()
+                if x < shot.x < x + w and y < shot.y < y + h:
+                    enemy.state = EnemyState.DEAD
+
+
     def draw(self):
         pyxel.cls(11)
         
