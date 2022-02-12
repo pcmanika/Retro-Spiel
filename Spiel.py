@@ -3,11 +3,10 @@ from random import *
 
 # frame_count % x zeit
 # pyxel edit Spiel.pyxres
-# Img seite
 # self!!!!!!
 # git pull
 
-class live:
+class Live:
     def __init__(self) -> None:
         pass
 
@@ -23,6 +22,7 @@ class Enemy:
         self.img = img
         self.direction = True
         self.speed = 0.5
+        self.anim = 0
 
     def update(self, playerx, playery):
 
@@ -47,16 +47,24 @@ class Enemy:
             self.direction = False
 
     def draw(self):
+
+        enemy_frames = [0,16,32,48,64,80,96,112,128,144,160,176,192,208,224,240]
+
+        if  pyxel.frame_count % 2 == 0:
+            self.anim = self.anim + 1
+        if self.anim == 16:
+            self.anim = 0
+
         if self.direction:
-            pyxel.blt(self.x, self.y, 2, 0, self.img, 16, 16, 2) 
+            pyxel.blt(self.x, self.y, 2, enemy_frames[self.anim] , self.img, 16, 16, 2) 
         else:
-            pyxel.blt(self.x, self.y, 2, 0, self.img,-16, 16, 2)
+            pyxel.blt(self.x, self.y, 2, enemy_frames[self.anim], self.img,-16, 16, 2)
     
 class Fireslime(Enemy):
     def __init__(self, add_shot):
         super().__init__(16)
         self.img = 16
-        self.speed = 1
+        self.speed = 0.5
         self.add_shot = add_shot
         self.last_shot = 0
     
@@ -107,6 +115,8 @@ class Bomber(Enemy):
         super().__init__(48)
         self.img = 48
         self.speed = 1.5
+        self.anim = 0
+    
 
 class Pet:
     def __init__(self):
@@ -182,6 +192,9 @@ class App:
         self.direction = True
         self.anim = 0
 
+        # Live
+        self.live = Live
+
         # Stones
         for i in range(0, 25):
             self.posS.append([randrange(0,160),randrange(0,120)])
@@ -245,7 +258,7 @@ class App:
         for i in self.shots:
            i.update()
                 
-            
+    # Shot     
     def draw(self):
         pyxel.cls(11)
         
@@ -260,7 +273,6 @@ class App:
             i.draw()
         
 
-        #pyxel.text(self.posx, self.posy, 'Pixel', 8)
         costume = 0
         #if -8 < self.posx - self.enemies.x < 8 and -8 < self.posy - self.enemies.y < 8:
         #    costume = 16
@@ -278,4 +290,5 @@ class App:
             pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], costume, -16, 16,2)
  
 App()
+
 
