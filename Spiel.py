@@ -32,14 +32,26 @@ class Enemy:
         self.speed = 0.5
         self.anim = 0
         self.state = EnemyState.ALIVE
+        self.deadtime = 0
     
     # Hitbox
     def hitbox(self):
         return [self.x, self.y, 16, 16]
 
-    def update(self, playerx, playery):
-
+    def handle_death(self):
         if self.state == EnemyState.DEAD:
+            return True
+        elif self.state == EnemyState.DYING:
+            if self.deadtime == 0:
+                self.deadtime = pyxel.frame_count
+                self.img += 16 
+            if pyxel.frame_count > self.deadtime + 10:
+                self.state = EnemyState.DEAD
+            return True
+        return False
+
+    def update(self, playerx, playery):
+        if self.handle_death():
             return
 
         if self.y - playery > 0:
@@ -96,7 +108,7 @@ class Slime(Enemy):
 class Fireslime(Enemy):
     def __init__(self, add_shot):
         super().__init__(16)
-        self.img = 16
+        self.img = 96
         self.speed = 0.5
         self.add_shot = add_shot
         self.last_shot = 0
@@ -105,6 +117,8 @@ class Fireslime(Enemy):
         return [self.x + 3, self.y + 1, 10, 12]
     
     def update(self, playerx, playery):
+        if self.handle_death():
+            return
 
         if self.y - playery > 0:
             self.y = self.y - self.speed
@@ -153,7 +167,7 @@ class Waterslime(Enemy):
 class Bomber(Enemy):
     def __init__(self):
         super().__init__(48)
-        self.img = 48
+        self.img = 64
         self.speed = 1.5
         self.anim = 0
 
@@ -302,14 +316,13 @@ class App:
         for shot in self.shots:
             shot.update()
 
-            #if shot is not Arrow:
-            #    continue
+            if type(shot) != Arrow:
+                continue
 
             for enemy in self.enemies:
                 x, y, w, h = enemy.hitbox()
-                if x < shot.x < x + w and y < shot.y < y + h:
-                    enemy.state = EnemyState.DEAD
-
+                if x < shot.x + 11 < x + w and y < shot.y + 7 < y + h:
+                    enemy.state = EnemyState.DYING
 
     def draw(self):
         pyxel.cls(11)
