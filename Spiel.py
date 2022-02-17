@@ -8,8 +8,7 @@ from enum import Enum
 # pyxel edit Spiel.pyxres
 # self!!!!!!
 # git pull
-
-class EnemyState(Enum):
+class LiveState(Enum):
     ALIVE = 0
     DYING = 1
     DEAD  = 2
@@ -31,7 +30,7 @@ class Enemy:
         self.direction = True
         self.speed = 0.5
         self.anim = 0
-        self.state = EnemyState.ALIVE
+        self.state = LiveState.ALIVE
         self.deadtime = 0
     
     # Hitbox
@@ -39,14 +38,14 @@ class Enemy:
         return [self.x, self.y, 16, 16]
 
     def handle_death(self):
-        if self.state == EnemyState.DEAD:
+        if self.state == LiveState.DEAD:
             return True
-        elif self.state == EnemyState.DYING:
+        elif self.state == LiveState.DYING:
             if self.deadtime == 0:
                 self.deadtime = pyxel.frame_count
                 self.img += 16 
             if pyxel.frame_count > self.deadtime + 10:
-                self.state = EnemyState.DEAD
+                self.state = LiveState.DEAD
             return True
         return False
 
@@ -76,7 +75,7 @@ class Enemy:
 
     def draw(self):
 
-        if self.state == EnemyState.DEAD:
+        if self.state == LiveState.DEAD:
             return
 
         # Hitbox
@@ -249,6 +248,8 @@ class App:
         self.posS = []
         self.direction = True
         self.anim = 0
+        self.state = LiveState.ALIVE
+        self.img = 0
 
         # Live
         self.live = Live
@@ -272,9 +273,14 @@ class App:
     def add_shot(self, shot):
         self.shots.append(shot)
 
-
+    # Hitbox
+    def hitbox(self):
+        return [self.posx + 3, self.posy + 2, 10, 14]
 
     def update(self):
+        if self.state == LiveState.DEAD:
+            self.img = 16
+            return    
 
         # Key handling
         if pyxel.btnp(pyxel.KEY_Q):
@@ -304,6 +310,16 @@ class App:
         for enemy in self.enemies:
             enemy.update(self.posx, self.posy)
 
+            # Hitbox 
+            if enemy.state != LiveState.ALIVE:
+                continue
+            x, y, w, h = enemy.hitbox()
+            px, py, pw, ph = self.hitbox()
+            if (px < x < px + pw or px < x + w < px + pw) and \
+                (py < y < py + ph or py < y + h < py + ph):
+                self.state = LiveState.DEAD
+
+
         # Pet
         self.pet.update(self.posx, self.posy)
 
@@ -316,13 +332,17 @@ class App:
         for shot in self.shots:
             shot.update()
 
-            if type(shot) != Arrow:
-                continue
-
-            for enemy in self.enemies:
-                x, y, w, h = enemy.hitbox()
+            if type(shot) == Arrow:
+                for enemy in self.enemies:
+                    if enemy.state == LiveState.DEAD:
+                        continue
+                    x, y, w, h = enemy.hitbox()
+                    if x < shot.x + 11 < x + w and y < shot.y + 7 < y + h:
+                        enemy.state = LiveState.DYING
+            else:
+                x, y, w, h = self.hitbox()
                 if x < shot.x + 11 < x + w and y < shot.y + 7 < y + h:
-                    enemy.state = EnemyState.DYING
+                    self.state = LiveState.DEAD         
 
     def draw(self):
         pyxel.cls(11)
@@ -337,8 +357,9 @@ class App:
         for i in self.shots:
             i.draw()
         
+        x, y, h, w = self.hitbox()
+        pyxel.rectb(x, y, h, w, 8)
 
-        costume = 0
         #if -8 < self.posx - self.enemies.x < 8 and -8 < self.posy - self.enemies.y < 8:
         #    costume = 16
 
@@ -350,10 +371,12 @@ class App:
             self.anim = 0
         
         if self.direction:
-            pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], costume, 16, 16,2)
+            pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], self.img, 16, 16,2)
         else:
-            pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], costume, -16, 16,2)
+            pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], self.img, -16, 16,2)
  
+        if self.state == LiveState.DEAD:
+            pyxel.text(55, 55, "Game Over", pyxel.frame_count % 16)
 App()
 
 
