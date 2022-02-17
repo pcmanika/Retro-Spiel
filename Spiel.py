@@ -24,7 +24,7 @@ class Live:
 
 class Enemy:
     def __init__(self, img):
-        self.x = randint(0,150)
+        self.x = randint(100,150)
         self.y = randint(0,110)
         self.img = img
         self.direction = True
@@ -52,16 +52,16 @@ class Enemy:
     def update(self, playerx, playery):
         if self.handle_death():
             return
-
+        
         if self.y - playery > 0:
             self.y = self.y - self.speed
         if playery - self.y > 0:
             self.y = self.y + self.speed
 
         if abs(self.y - playery) <= self.speed:
-            if self.x - playerx > 10:
+            if self.x - playerx > 0:
                 self.x = self.x - self.speed
-            if playerx - self.x > 10:
+            if playerx - self.x > 0:
                 self.x = self.x + self.speed
         
         self.face_player(playerx)
@@ -167,12 +167,26 @@ class Bomber(Enemy):
     def __init__(self):
         super().__init__(48)
         self.img = 64
-        self.speed = 1.5
+        self.speed = 1
         self.anim = 0
 
+    def update(self, playerx, playery):
+        if self.handle_death():
+            return
+        
+        if self.y - playery > 0:
+            self.y = self.y - self.speed
+        elif self.y - playery < 0:
+            self.y = self.y + self.speed
+        if playerx - self.x > 0:
+            self.x = self.x + self.speed
+        elif playerx - self.x < 0:
+            self.x = self.x - self.speed
+        
+        self.face_player(playerx)
     # Hitbox
     def hitbox(self):
-        return [self.x + 2, self.y + 2, 12, 12]
+        return [self.x + 3, self.y + 4, 10, 8]
     
 
 class Pet:
@@ -209,6 +223,7 @@ class Arrow:
         self.y = 0
         self.shotmove = False
         self.image = 80
+        self.state = LiveState.ALIVE
     
     def shoot(self, x, y, direction):
         self.shotmove = True
@@ -243,13 +258,19 @@ class App:
     def __init__(self):
         pyxel.init(160, 120, title="Hello Pyxel")
         pyxel.load('Spiel.pyxres')
-        self.posx = 0
-        self.posy = 0
+        self.reset()
+        pyxel.run(self.update, self.draw)
+
+    def reset(self):
+        self.posx = 10
+        self.posy = 20
         self.posS = []
         self.direction = True
         self.anim = 0
         self.state = LiveState.ALIVE
         self.img = 0
+        self.score = 0
+        self.deadtime = 0
 
         # Live
         self.live = Live
@@ -267,7 +288,6 @@ class App:
         # Enemy
         self.enemies = [Slime(), Fireslime(self.add_shot), Waterslime(), Bomber()]
         
-        pyxel.run(self.update, self.draw)
         
     # Shot
     def add_shot(self, shot):
@@ -275,11 +295,15 @@ class App:
 
     # Hitbox
     def hitbox(self):
-        return [self.posx + 3, self.posy + 2, 10, 14]
+        return [self.posx + 5, self.posy + 4, 7, 10]
 
     def update(self):
         if self.state == LiveState.DEAD:
             self.img = 16
+            if not self.deadtime:
+                self.deadtime = pyxel.frame_count 
+            if pyxel.btn(pyxel.KEY_SPACE) and pyxel.frame_count > self.deadtime + 60 :
+                self.reset()
             return    
 
         # Key handling
@@ -339,10 +363,34 @@ class App:
                     x, y, w, h = enemy.hitbox()
                     if x < shot.x + 11 < x + w and y < shot.y + 7 < y + h:
                         enemy.state = LiveState.DYING
+                        shot.state = LiveState.DEAD
+                        self.score += 1
             else:
                 x, y, w, h = self.hitbox()
                 if x < shot.x + 11 < x + w and y < shot.y + 7 < y + h:
                     self.state = LiveState.DEAD         
+
+        # Enemy list
+        self.enemies = [e for e in self.enemies if e.state != LiveState.DEAD]
+        if len(self.enemies) < 5 + self.score // 10:
+            newenemy = choice([Slime(), Fireslime(self.add_shot), Waterslime(), Bomber()])
+            
+            newx = self.posx 
+            newy = self.posy
+            while self.posx - 20 < newx < self.posx + 20:
+                newx = randint(0,150)
+            while self.posy - 20 < newy < self.posy + 20:
+                newy = randint(0,150)
+            newenemy.x = newx
+            newenemy.y = newy
+            if random() < 0.2:
+                newenemy.speed *= 1.5
+            elif random() < 0.2:
+                newenemy.speed /= 2
+
+            self.enemies.append(newenemy)
+
+        self.shots = [e for e in self.shots if e.state != LiveState.DEAD]
 
     def draw(self):
         pyxel.cls(11)
@@ -357,8 +405,9 @@ class App:
         for i in self.shots:
             i.draw()
         
-        x, y, h, w = self.hitbox()
-        pyxel.rectb(x, y, h, w, 8)
+        # Hitbox
+        #x, y, h, w = self.hitbox()
+        #pyxel.rectb(x, y, h, w, 8)
 
         #if -8 < self.posx - self.enemies.x < 8 and -8 < self.posy - self.enemies.y < 8:
         #    costume = 16
@@ -376,7 +425,10 @@ class App:
             pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], self.img, -16, 16,2)
  
         if self.state == LiveState.DEAD:
-            pyxel.text(55, 55, "Game Over", pyxel.frame_count % 16)
+            pyxel.text(55, 55, "Game Over", 2)
+            pyxel.text(55, 63, "Score: " + str(self.score), 0)
+        else:
+            pyxel.text(5, 5, "Score: " + str(self.score), 0)
 App()
 
 
