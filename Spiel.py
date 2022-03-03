@@ -6,7 +6,6 @@ from enum import Enum
 
 # frame_count % x zeit
 # pyxel edit Spiel.pyxres
-# self!!!!!!
 # git pull
 class LiveState(Enum):
     ALIVE = 0
@@ -28,7 +27,8 @@ class Enemy:
         self.y = randint(0,110)
         self.img = img
         self.direction = True
-        self.speed = 0.5
+        self.speedx = 0.5
+        self.speedy = 0.5
         self.anim = 0
         self.state = LiveState.ALIVE
         self.deadtime = 0
@@ -54,15 +54,15 @@ class Enemy:
             return
         
         if self.y - playery > 0:
-            self.y = self.y - self.speed
+            self.y = self.y - self.speedy
         if playery - self.y > 0:
-            self.y = self.y + self.speed
+            self.y = self.y + self.speedy
 
-        if abs(self.y - playery) <= self.speed:
+        if abs(self.y - playery) <= self.speedy:
             if self.x - playerx > 0:
-                self.x = self.x - self.speed
+                self.x = self.x - self.speedx
             if playerx - self.x > 0:
-                self.x = self.x + self.speed
+                self.x = self.x + self.speedx
         
         self.face_player(playerx)
 
@@ -79,8 +79,8 @@ class Enemy:
             return
 
         # Hitbox
-        x, y, h, w = self.hitbox()
-        pyxel.rectb(x, y, h, w, 8)
+        #x, y, h, w = self.hitbox()
+        #pyxel.rectb(x, y, h, w, 8)
 
         enemy_frames = [0,16,32,48,64,80,96,112,128,144,160,176,192,208,224,240]
 
@@ -99,7 +99,8 @@ class Slime(Enemy):
     def __init__(self):
         super().__init__(32)
         self.img = 0
-        self.speed = 1
+        self.speedx = 1
+        self.speedy = 1
 
     def hitbox(self):
         return [self.x + 2, self.y + 6, 11, 8]
@@ -108,7 +109,8 @@ class Fireslime(Enemy):
     def __init__(self, add_shot):
         super().__init__(16)
         self.img = 96
-        self.speed = 0.5
+        self.speedx = 0.5
+        self.speedy = 0.5
         self.add_shot = add_shot
         self.last_shot = 0
 
@@ -120,9 +122,9 @@ class Fireslime(Enemy):
             return
 
         if self.y - playery > 0:
-            self.y = self.y - self.speed
+            self.y = self.y - self.speedy
         if playery - self.y > 0:
-            self.y = self.y + self.speed
+            self.y = self.y + self.speedy
 
         if self.y == playery:
             distance = self.x - playerx
@@ -136,14 +138,14 @@ class Fireslime(Enemy):
 
             if abs(distance) < 50:
                 if distance > 0:
-                    self.x = self.x + self.speed
+                    self.x = self.x + self.speedx
                 else:
-                    self.x = self.x - self.speed
+                    self.x = self.x - self.speedx
             elif abs(distance) > 55:
                 if distance > 0:
-                    self.x = self.x - self.speed
+                    self.x = self.x - self.speedx
                 else:
-                    self.x = self.x + self.speed
+                    self.x = self.x + self.speedx
 
         self.face_player(playerx)
 
@@ -157,7 +159,8 @@ class Waterslime(Enemy):
     def __init__(self):
         super().__init__(32)
         self.img = 32
-        self.speed = 0.25
+        self.speedy = 0.25
+        self.speedx = 1.5
 
     # Hitbox
     def hitbox(self):
@@ -167,7 +170,8 @@ class Bomber(Enemy):
     def __init__(self):
         super().__init__(48)
         self.img = 64
-        self.speed = 1
+        self.speedx = 1
+        self.speedy =1
         self.anim = 0
 
     def update(self, playerx, playery):
@@ -175,13 +179,13 @@ class Bomber(Enemy):
             return
         
         if self.y - playery > 0:
-            self.y = self.y - self.speed
+            self.y = self.y - self.speedy
         elif self.y - playery < 0:
-            self.y = self.y + self.speed
+            self.y = self.y + self.speedy
         if playerx - self.x > 0:
-            self.x = self.x + self.speed
+            self.x = self.x + self.speedx
         elif playerx - self.x < 0:
-            self.x = self.x - self.speed
+            self.x = self.x - self.speedx
         
         self.face_player(playerx)
     # Hitbox
@@ -302,14 +306,12 @@ class App:
             self.img = 16
             if not self.deadtime:
                 self.deadtime = pyxel.frame_count 
-            if pyxel.btn(pyxel.KEY_SPACE) and pyxel.frame_count > self.deadtime + 60 :
+            if pyxel.btn(pyxel.KEY_SPACE) and pyxel.frame_count > self.deadtime + 60:
                 self.reset()
             return    
 
         # Key handling
-        if pyxel.btnp(pyxel.KEY_Q):
-            pyxel.quit()
-        if pyxel.btn(pyxel.KEY_A):
+        if pyxel.btn(pyxel.KEY_A) or pyxel.btn(pyxel.GAMEPAD1_BUTTON_DPAD_LEFT):
             self.posx = self.posx - 2
             self.direction = False
         if pyxel.btn(pyxel.KEY_D):
@@ -319,6 +321,7 @@ class App:
             self.posy = self.posy - 2
         if pyxel.btn(pyxel.KEY_S):
             self.posy = self.posy + 2   
+        
 
         # Player position
         if self.posx <= -2:
@@ -372,21 +375,29 @@ class App:
 
         # Enemy list
         self.enemies = [e for e in self.enemies if e.state != LiveState.DEAD]
-        if len(self.enemies) < 5 + self.score // 10:
+        if len(self.enemies) < 4 + self.score // 15:
             newenemy = choice([Slime(), Fireslime(self.add_shot), Waterslime(), Bomber()])
             
-            newx = self.posx 
-            newy = self.posy
-            while self.posx - 20 < newx < self.posx + 20:
-                newx = randint(0,150)
-            while self.posy - 20 < newy < self.posy + 20:
-                newy = randint(0,150)
+            if pyxel.frame_count % 4 == 0:
+                newx = 0
+                newy = randint(0, 150)
+            if pyxel.frame_count % 4 == 1:
+                newx = 160
+                newy = randint(0, 150)
+            if pyxel.frame_count % 4 == 2:
+                newx = randint(0, 160)
+                newy = 0
+            if pyxel.frame_count % 4 == 3:
+                newx = randint(0,160)
+                newy = 150
             newenemy.x = newx
             newenemy.y = newy
             if random() < 0.2:
-                newenemy.speed *= 1.5
+                newenemy.speedx *= 1.4
+                newenemy.speedy *= 1.4
             elif random() < 0.2:
-                newenemy.speed /= 2
+                newenemy.speedy /= 2
+                newenemy.speedy /= 2
 
             self.enemies.append(newenemy)
 
@@ -425,7 +436,7 @@ class App:
             pyxel.blt(self.posx, self.posy, 1, player_frames[self.anim], self.img, -16, 16,2)
  
         if self.state == LiveState.DEAD:
-            pyxel.text(55, 55, "Game Over", 2)
+            pyxel.text(55, 55, "Game Over", 1)
             pyxel.text(55, 63, "Score: " + str(self.score), 0)
         else:
             pyxel.text(5, 5, "Score: " + str(self.score), 0)
